@@ -1,0 +1,79 @@
+{
+  "products": [
+    "bottle",
+    "chair",
+    "table",
+    "lamp",
+    "bag",
+    "sofa",
+    "desk",
+    "shelf",
+    "cup",
+    "notebook",
+    "planter",
+    "phone case",
+    "box",
+    "stand",
+    "rack"
+  ],
+
+  "materials": [
+    "steel",
+    "plastic",
+    "wood",
+    "glass",
+    "bamboo",
+    "aluminum",
+    "copper",
+    "iron",
+    "fabric",
+    "leather",
+    "rubber",
+    "cardboard",
+    "paper",
+    "cotton",
+    "jute",
+    "hemp",
+    "cork",
+    "recycled plastic",
+    "recycled glass",
+    "recycled steel",
+    "bioplastic"
+  ],
+
+  "budget": {
+    "low": [
+      "cheap",
+      "low cost",
+      "budget",
+      "affordable",
+      "economical",
+      "inexpensive"
+    ],
+    "medium": [
+      "average",
+      "mid",
+      "moderate",
+      "standard"
+    ],
+    "high": [
+      "premium",
+      "expensive",
+      "luxury",
+      "high end"
+    ]
+  },
+
+  "eco_words": [
+    "eco",
+    "green",
+    "sustainable",
+    "environment",
+    "eco friendly",
+    "recyclable",
+    "biodegradable",
+    "low carbon",
+    "organic",
+    "natural"
+  ]
+}
