@@ -1,0 +1,9 @@
+material,carbon_score,recyclable,cost_level,durability,biodegradable
+bamboo,10,yes,low,medium,yes
+steel,30,yes,medium,high,no
+plastic,80,no,low,low,no
+recycled_plastic,40,yes,low,medium,no
+wood,20,yes,medium,high,yes
+glass,25,yes,medium,high,no
+aluminium,35,yes,medium,high,no
+hemp,15,yes,low,medium,yes
