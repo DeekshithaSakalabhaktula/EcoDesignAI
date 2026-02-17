@@ -7,3 +7,9 @@ wood,20,yes,medium,high,yes
 glass,25,yes,medium,high,no
 aluminium,35,yes,medium,high,no
 hemp,15,yes,low,medium,yes
+cork,12,yes,medium,medium,yes
+jute,18,yes,low,medium,yes
+titanium,40,yes,high,very_high,no
+cardboard,22,yes,low,low,yes
+ceramic,28,no,medium,high,no
+rubber_natural,26,yes,medium,medium,yes
