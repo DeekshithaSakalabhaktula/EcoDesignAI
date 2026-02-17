@@ -1,5 +1,5 @@
-from sustainability_db import load_materials
-from eco_score import calculate_eco_score
+from .sustainability_db import load_materials
+from .eco_score import calculate_eco_score
 
 
 def filter_materials(budget=None, eco_priority=False):
