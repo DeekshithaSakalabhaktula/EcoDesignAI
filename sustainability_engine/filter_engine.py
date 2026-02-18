@@ -22,4 +22,21 @@ def filter_materials(budget=None, eco_priority=False):
     # Sort by best eco_score
     df = df.sort_values(by="eco_score", ascending=False)
 
-    return df.to_dict(orient="records")
+    results = []
+
+    for _, row in df.iterrows():
+        reason = "Balanced eco choice"
+
+        if row["carbon_score"] < 20 and row["biodegradable"] == "yes":
+            reason = "Low carbon + biodegradable"
+        elif row["recyclable"] == "yes":
+            reason = "Highly recyclable material"
+
+        results.append({
+            "material": row["material"],
+            "eco_score": row["eco_score"],
+            "durability": row["durability"],
+            "reason": reason
+    })
+
+    return results

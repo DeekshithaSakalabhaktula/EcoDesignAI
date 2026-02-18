@@ -1,8 +1,13 @@
+import os
 import json
 
 def load_intents():
-    with open("intents.json", "r") as f:
+    base_dir = os.path.dirname(__file__)   # folder of nlp_utils.py
+    file_path = os.path.join(base_dir, "intents.json")
+
+    with open(file_path, "r") as f:
         return json.load(f)
+
 
 def extract_data(user_text):
     intents = load_intents()
@@ -35,5 +40,7 @@ def extract_data(user_text):
     for eco in intents["eco_words"]:
         if eco in text:
             result["eco_priority"] = True
+    if result["budget"] is None:
+        result["budget"] = "medium"      
 
     return result
