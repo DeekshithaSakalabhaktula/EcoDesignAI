@@ -1,4 +1,4 @@
-from filter_engine import filter_materials
+from .filter_engine import filter_materials
 
 # Test Case 1
 print("Low Budget + Eco Priority")
