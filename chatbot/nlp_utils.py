@@ -5,9 +5,8 @@ def load_intents():
     base_dir = os.path.dirname(__file__)   # folder of nlp_utils.py
     file_path = os.path.join(base_dir, "intents.json")
 
-    with open(file_path, "r") as f:
+    with open("C:\\Users\\user\\Desktop\\EcoDesignAI\\chatbot\\intents.json", "r") as f:
         return json.load(f)
-
 
 def extract_data(user_text):
     intents = load_intents()

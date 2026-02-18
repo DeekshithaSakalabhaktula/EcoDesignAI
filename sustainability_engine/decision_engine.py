@@ -6,21 +6,22 @@ def generate_decision(product=None, budget=None, eco_priority=False):
     if not materials:
         return {
             "product": product,
-            "message": "No suitable materials found.",
-            "recommendations": []
+            "recommended_material": None,
+            "top_3_options": [],
+            "decision_explanation": "No suitable materials found."
         }
 
     top_material = materials[0]
 
     explanation = f"""
-For designing a {product}, the best material is {top_material['material']}.
+For designing a {product}, the best material is {top_material.get('material')}.
 
 Reason:
-- Carbon Score: {top_material['carbon_score']}
-- Recyclable: {top_material['recyclable']}
-- Biodegradable: {top_material['biodegradable']}
-- Durability: {top_material['durability']}
-- Overall Eco Score: {top_material['eco_score']}
+- Carbon Score: {top_material.get('carbon_score')}
+- Recyclable: {top_material.get('recyclable')}
+- Biodegradable: {top_material.get('biodegradable')}
+- Durability: {top_material.get('durability')}
+- Overall Eco Score: {top_material.get('eco_score')}
 
 This material satisfies the selected budget and sustainability preferences.
 """
