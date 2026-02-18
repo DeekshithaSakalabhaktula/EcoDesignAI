@@ -1,7 +1,7 @@
 from .sustainability_db import load_materials
 from .eco_score import calculate_eco_score
 
-def filter_materials(budget=None, eco_priority=False):
+def filter_materials(budget=None, eco_priority=False, min_durability=None):
     df = load_materials()
 
     if df is None or df.empty:
@@ -9,11 +9,21 @@ def filter_materials(budget=None, eco_priority=False):
 
     # Budget filter
     if budget:
-        df = df[df["cost_level"] == budget]
+        if "cost_level" in df.columns:
+            df = df[df["cost_level"] == budget]
+        
 
     # Eco filter
     if eco_priority:
-        df = df[df["carbon_score"] <= 40]
+        if "carbon_score" in df.columns and "material" in df.columns:
+            df = df[(df["carbon_score"] <= 40) & (df["material"].str.lower() != "plastic")]
+
+     # Durability filter
+    if min_durability and "durability" in df.columns:
+        allowed = ["medium", "high"]  # example threshold
+        if min_durability.lower() == "high":
+            allowed = ["high"]
+        df = df[df["durability"].isin(allowed)]
 
     if df.empty:
         return []
