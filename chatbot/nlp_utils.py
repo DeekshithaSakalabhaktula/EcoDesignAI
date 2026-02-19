@@ -1,15 +1,14 @@
 import os
 import json
 
-def load_intents():
-    base_dir = os.path.dirname(__file__)   # folder of nlp_utils.py
-    file_path = os.path.join(base_dir, "intents.json")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+INTENTS_PATH = os.path.join(BASE_DIR, "intents.json")
 
-    with open("C:\\Users\\user\\Desktop\\EcoDesignAI\\chatbot\\intents.json", "r") as f:
-        return json.load(f)
+with open(INTENTS_PATH, "r", encoding="utf-8") as file:
+    intents = json.load(file)
+
 
 def extract_data(user_text):
-    intents = load_intents()
     text = user_text.lower()
 
     result = {
@@ -39,7 +38,8 @@ def extract_data(user_text):
     for eco in intents["eco_words"]:
         if eco in text:
             result["eco_priority"] = True
+
     if result["budget"] is None:
-        result["budget"] = "medium"      
+        result["budget"] = "medium"
 
     return result

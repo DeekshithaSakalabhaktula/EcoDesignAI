@@ -7,14 +7,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from flask import Flask, request, jsonify
 from chatbot.nlp_utils import extract_data
 from sustainability_engine.decision_engine import generate_decision
-from image_module.image_generator import generate_product_image
+from image.generator import generate_image
 
 app = Flask(__name__)
 
 @app.route("/")
 def home():
     return jsonify({"message": "EcoDesignAI API is running successfully!"})
-
 
 @app.route("/design", methods=["POST"])
 def design_product():
@@ -41,15 +40,22 @@ def design_product():
         # STEP 2 — Decision Engine
         decision = generate_decision(product, budget, eco_priority)
 
-        # STEP 3 — Image Generation (Optional)
+        # STEP 3 — Image Generation
         recommended_material = decision.get("recommended_material")
 
         image_url = None
+
         if recommended_material:
-            image_url = generate_product_image(
-                product,
-                recommended_material["material"]
-            )
+            dss_output = {
+                "product": product,
+                "material": recommended_material.get("material"),
+                "budget": budget,
+                "eco_priority": eco_priority,
+                "durability": recommended_material.get("durability")
+            }
+
+            image_url = generate_image(dss_output)
+
 
         # FINAL RESPONSE
         response = {
