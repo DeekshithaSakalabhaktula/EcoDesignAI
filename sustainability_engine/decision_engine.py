@@ -10,29 +10,26 @@ def interpret_carbon(score):
         return "High carbon impact"
 
 
-def interpret_durability(score):
-    if score >= 8:
-        return "Highly durable"
-    elif score >= 5:
-        return "Moderately durable"
-    else:
-        return "Low durability"
+def interpret_durability(value):
+
+    if isinstance(value, str):
+        value = value.lower()
+
+        if value == "high":
+            return "Highly durable"
+        elif value == "medium":
+            return "Moderately durable"
+        else:
+            return "Low durability"
+
+    return "Unknown durability"
 
 
 def generate_decision(product=None, budget=None, eco_priority=False, durability_req=None):
 
 
-    # Convert budget string to numeric level
-    budget_map = {
-         "low": 1,
-         "medium": 2,
-         "high": 4
-    }
-
-    if isinstance(budget, str):
-        budget = budget_map.get(budget.lower(), 2)
-
     materials = filter_materials(
+        product=product,
         budget=budget,
         eco_priority=eco_priority,
         min_durability=durability_req

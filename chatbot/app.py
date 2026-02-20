@@ -27,6 +27,8 @@ def design_product():
 
         # STEP 1 — NLP Extraction
         parsed_data = extract_data(user_input)
+        
+        print("Parsed Data:", parsed_data)  
 
         product = parsed_data.get("product")
         budget = parsed_data.get("budget")
@@ -40,6 +42,8 @@ def design_product():
         # STEP 2 — Decision Engine
         decision = generate_decision(product, budget, eco_priority)
 
+        print("Decision:", decision)
+        
         # STEP 3 — Image Generation
         recommended_material = decision.get("recommended_material")
 

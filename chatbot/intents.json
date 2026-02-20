@@ -14,7 +14,21 @@
     "phone case",
     "box",
     "stand",
-    "rack"
+    "rack",
+    "shirt",
+    "tshirt",
+    "jacket",
+    "pants",
+    "clothes",
+    "backpack",
+    "bed",
+    "cabinet",
+    "stool",
+    "watch",
+    "helmet",
+    "shoe",
+    "bowl",
+    "plate"
   ],
 
   "materials": [
@@ -31,14 +45,24 @@
     "rubber",
     "cardboard",
     "paper",
-    "cotton",
+    "organic_cotton",
+    "recycled_cotton",
     "jute",
     "hemp",
-    "cork",
-    "recycled plastic",
-    "recycled glass",
-    "recycled steel",
-    "bioplastic"
+    "cork_board",
+    "cork_fabric",
+    "recycled_plastic",
+    "recycled_glass",
+    "recycled_steel",
+    "bioplastic",
+    "rice_husk_board",
+    "fly_ash_cement",
+    "hempcrete",
+    "rammed_earth",
+    "bamboo_laminate",
+    "bamboo_fiber",
+    "mycelium_composite",
+    "bagasse_board"
   ],
 
   "budget": {

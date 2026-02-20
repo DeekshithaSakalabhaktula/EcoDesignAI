@@ -1,6 +1,6 @@
 import requests
 import os
-from prompts import build_prompt
+from .prompts import build_prompt
 import uuid
 from datetime import datetime
 
@@ -47,7 +47,7 @@ def generate_image(dss_output):
            f.write(response.content)
 
        print(f"✅ Image saved as {filepath}")
-       return filepath
+       return filepath.replace("\\", "/")
 
     else:
         print("❌ Error:", response.text)

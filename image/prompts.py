@@ -1,17 +1,20 @@
 def build_prompt(dss_output):
 
-    style = "photorealistic product design, minimalist, 3D render, white background"
+    parts = []
 
-    eco_features = ""
+    parts.append("photorealistic product design")
+    parts.append("minimalist")
+    parts.append("3D render")
+    parts.append("white background")
+
+    parts.append(f"{dss_output['material']} {dss_output['product']}")
+    parts.append(f"{dss_output['budget']} cost")
+
     if dss_output.get("eco_priority"):
-        eco_features = "eco-friendly, recyclable, biodegradable"
+        parts.append("eco-friendly")
+        parts.append("recyclable")
+        parts.append("biodegradable")
 
-    prompt = (
-        f"{style}, "
-        f"{dss_output['material']} {dss_output['product']}, "
-        f"{dss_output['budget']} cost, "
-        f"{eco_features}, "
-        f"durability {dss_output.get('durability', 'medium')}"
-    )
+    parts.append(f"durability {dss_output.get('durability', 'medium')}")
 
-    return prompt
+    return ", ".join(parts)
