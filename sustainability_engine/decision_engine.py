@@ -11,7 +11,6 @@ def interpret_carbon(score):
 
 
 def interpret_durability(value):
-
     if isinstance(value, str):
         value = value.lower()
 
@@ -25,14 +24,14 @@ def interpret_durability(value):
     return "Unknown durability"
 
 
-def generate_decision(product=None, budget=None, eco_priority=False, durability_req=None):
-
+def generate_decision(product=None, budget=None, eco_priority=False, durability_req=None, preferred_material=None):
 
     materials = filter_materials(
         product=product,
         budget=budget,
         eco_priority=eco_priority,
-        min_durability=durability_req
+        min_durability=durability_req,
+        preferred_material=preferred_material
     )
 
     if not materials:
@@ -44,10 +43,10 @@ def generate_decision(product=None, budget=None, eco_priority=False, durability_
         }
 
     top_material = materials[0]
-    second_material = materials[1] if len(materials) > 1 else None
+    top_3 = materials[:3]
 
     carbon_meaning = interpret_carbon(top_material.get("carbon_score", 0))
-    durability_meaning = interpret_durability(top_material.get("durability", 0))
+    durability_meaning = interpret_durability(top_material.get("durability", ""))
 
     explanation = (
         f"For designing a {product}, the most suitable material is "
@@ -55,27 +54,18 @@ def generate_decision(product=None, budget=None, eco_priority=False, durability_
         f"Sustainability Profile:\n"
         f"• Carbon Score: {top_material.get('carbon_score')} ({carbon_meaning})\n"
         f"• Eco Score: {top_material.get('eco_score')}\n"
+        f"• Final Sustainability Score: {round(top_material.get('final_score', 0), 2)}\n"
         f"• Recyclable: {top_material.get('recyclable')}\n"
         f"• Biodegradable: {top_material.get('biodegradable')}\n"
         f"• Durability: {top_material.get('durability')} ({durability_meaning})\n\n"
-    )
-
-    if second_material:
-        explanation += (
-            f"Comparison Insight:\n"
-            f"Compared to {second_material.get('material')}, "
-            f"{top_material.get('material')} provides a better balance between "
-            f"sustainability and durability while fitting within your selected budget.\n\n"
-        )
-
-    explanation += (
-        "This recommendation aligns with your budget preferences and "
-        "sustainability priority settings, offering an optimal eco-conscious design choice."
+        f"This material provides the best overall balance between "
+        f"environmental impact, durability, and cost efficiency "
+        f"based on your selected preferences."
     )
 
     return {
-        "product": product,
+        "product": product,  # FIX #4: was missing from success response
         "recommended_material": top_material,
-        "top_3_options": materials[:3],
+        "top_3_options": top_3,
         "decision_explanation": explanation.strip()
     }

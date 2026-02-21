@@ -1,14 +1,21 @@
-from .filter_engine import filter_materials
+from decision_engine import generate_decision
 
-# Test Case 1
-print("Low Budget + Eco Priority")
-results = filter_materials(budget="low", eco_priority=True)
+result = generate_decision(
+    product="shirt",
+    budget="low",
+    eco_priority=True,
+    durability_req="medium"
+)
 
-for r in results:
-    print(r)
+print("\n===== RECOMMENDATION RESULT =====\n")
 
-print("\nMedium Budget without Eco Priority")
-results = filter_materials(budget="medium", eco_priority=False)
+if result["recommended_material"]:
+    print("Recommended Material:", result["recommended_material"]["material"])
+    print("\nTop 3 Options:")
+    for item in result["top_3_options"]:
+        print("-", item["material"])
 
-for r in results:
-    print(r)
+    print("\nExplanation:\n")
+    print(result["decision_explanation"])
+else:
+    print(result["decision_explanation"])

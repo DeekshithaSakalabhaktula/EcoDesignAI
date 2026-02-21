@@ -1,4 +1,4 @@
-import requests
+import requests # type: ignore
 import os
 from .prompts import build_prompt
 import uuid

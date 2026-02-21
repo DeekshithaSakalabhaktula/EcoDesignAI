@@ -17,6 +17,8 @@
     "rack",
     "shirt",
     "tshirt",
+    "t-shirt",
+    "t shirt",
     "jacket",
     "pants",
     "clothes",
@@ -45,6 +47,8 @@
     "rubber",
     "cardboard",
     "paper",
+    "cork",
+    "linen",
     "organic_cotton",
     "recycled_cotton",
     "jute",
@@ -99,5 +103,11 @@
     "low carbon",
     "organic",
     "natural"
-  ]
+  ],
+
+  "durability": {
+    "low": ["fragile", "temporary", "disposable"],
+    "medium": ["standard", "moderate", "regular"],
+    "high": ["durable", "strong", "heavy duty", "long lasting", "robust"]
+  }
 }
