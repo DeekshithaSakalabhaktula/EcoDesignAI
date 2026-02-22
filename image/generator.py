@@ -1,56 +1,56 @@
-import requests # type: ignore
 import os
-from .prompts import build_prompt
 import uuid
 from datetime import datetime
+from openai import OpenAI 
+from .prompts import build_prompt
+from dotenv import load_dotenv
+load_dotenv()
 
-
-
-# HuggingFace SDXL Model Endpoint
-API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
-
-# 🔐 Get API Key from environment variable
-API_KEY = os.getenv("HF_API_KEY")
+# 🔐 Get OpenAI API key
+API_KEY = os.getenv("OPENAI_API_KEY")
+print("Loaded key starts with:", API_KEY[:10])
 
 if not API_KEY:
-    raise ValueError("HF_API_KEY not found. Please set your environment variable.")
+    raise ValueError("OPENAI_API_KEY not found. Please set your environment variable.")
 
-headers = {
-    "Authorization": f"Bearer {API_KEY}"
-}
+client = OpenAI(api_key=API_KEY)
 
 def generate_image(dss_output):
     prompt = build_prompt(dss_output)
 
     print("Generated Prompt:\n", prompt)
 
-    payload = {
-        "inputs": prompt
-    }
+    try:
+        result = client.images.generate(
+            model="gpt-image-1",
+            prompt=prompt,
+            size="1024x1024"
+        )
 
-    response = requests.post(API_URL, headers=headers, json=payload)
+        image_base64 = result.data[0].b64_json
 
-    if response.status_code == 200:
-    
-       # Create folder if not exists
-       output_dir = f"../generated_images/{dss_output['product']}"
-       os.makedirs(output_dir, exist_ok=True)
+        import base64
+        image_bytes = base64.b64decode(image_base64)
 
-       # Create unique filename
-       unique_id = uuid.uuid4().hex[:8]
-       timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-       filename = f"{dss_output['product']}_{timestamp}_{unique_id}.png"
+        # Create folder if not exists
+        output_dir = f"../generated_images/{dss_output['product']}"
+        os.makedirs(output_dir, exist_ok=True)
 
-       filepath = os.path.join(output_dir, filename)
+        # Create unique filename
+        unique_id = uuid.uuid4().hex[:8]
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{dss_output['product']}_{timestamp}_{unique_id}.png"
 
-       with open(filepath, "wb") as f:
-           f.write(response.content)
+        filepath = os.path.join(output_dir, filename)
 
-       print(f"✅ Image saved as {filepath}")
-       return filepath.replace("\\", "/")
+        with open(filepath, "wb") as f:
+            f.write(image_bytes)
 
-    else:
-        print("❌ Error:", response.text)
+        print(f"✅ Image saved as {filepath}")
+        return filepath.replace("\\", "/")
+
+    except Exception as e:
+        print("❌ Image generation error:", str(e))
         return None
 
 
