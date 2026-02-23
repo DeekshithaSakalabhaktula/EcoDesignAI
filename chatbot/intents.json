@@ -76,19 +76,22 @@
       "budget",
       "affordable",
       "economical",
-      "inexpensive"
+      "inexpensive",
+      "low"
     ],
     "medium": [
       "average",
       "mid",
       "moderate",
-      "standard"
+      "standard",
+      "medium"
     ],
     "high": [
       "premium",
       "expensive",
       "luxury",
-      "high end"
+      "high end",
+      "high"
     ]
   },
 

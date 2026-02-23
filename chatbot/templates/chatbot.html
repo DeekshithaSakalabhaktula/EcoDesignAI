@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0;
+            padding: 10px;
+        }
+        #chat-box {
+            height: 80vh;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        input {
+            width: 80%;
+            padding: 8px;
+        }
+        button {
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<h3>EcoDesignAI Assistant</h3>
+
+<div id="chat-box"></div>
+
+<input type="text" id="user-input" placeholder="Type your message..." />
+<button onclick="sendMessage()">Send</button>
+
+<script>
+function sendMessage() {
+    const input = document.getElementById("user-input");
+    const message = input.value;
+
+    fetch("/design", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ text: message })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("chat-box").innerHTML +=
+            "<p><b>You:</b> " + message + "</p>" +
+            "<p><b>Bot:</b> " + JSON.stringify(data) + "</p>";
+    });
+
+    input.value = "";
+}
+</script>
+
+</body>
+</html>

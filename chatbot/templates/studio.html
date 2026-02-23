@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EcoDesignAI – Interactive Sustainability Studio</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/studio.css') }}">
+</head>
+<body>
+
+<header>
+    <h1>EcoDesignAI</h1>
+</header>
+
+<div class="container">
+
+    <!-- LEFT SIDE -->
+    <div class="left-panel">
+
+        <div class="spotlight">
+            <h2>🌿 Material of the Moment</h2>
+            <div id="spotlight-content">
+                Bamboo – Fast growing, renewable.
+            </div>
+        </div>
+
+        <div class="materials-grid">
+            <div class="material-card" data-material="plastic">Plastic</div>
+            <div class="material-card" data-material="bamboo">Bamboo</div>
+            <div class="material-card" data-material="steel">Steel</div>
+            <div class="material-card" data-material="aluminum">Recycled Aluminum</div>
+        </div>
+
+        <div id="impact-display"></div>
+
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="right-panel">
+        <iframe src="/chatbot" class="chat-frame"></iframe>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/studio.js') }}"></script>
+</body>
+</html>

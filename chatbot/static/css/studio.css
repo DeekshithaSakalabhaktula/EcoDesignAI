@@ -1,0 +1,52 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f8f5;
+}
+
+header {
+    padding: 20px;
+    background: #1e3d2f;
+    color: white;
+    text-align: center;
+}
+
+.container {
+    display: flex;
+    height: 90vh;
+}
+
+.left-panel {
+    width: 60%;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.right-panel {
+    width: 40%;
+    border-left: 2px solid #ddd;
+}
+
+.chat-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.materials-grid {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.material-card {
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.material-card:hover {
+    transform: scale(1.05);
+}
