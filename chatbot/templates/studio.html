@@ -7,7 +7,14 @@
 <body>
 
 <header>
-    <h1>EcoDesignAI</h1>
+    <div class="header-inner">
+        <div class="logo">
+            <span class="logo-icon">🌿</span>
+            <h1>Eco<span>Design</span>AI</h1>
+        </div>
+        <span class="header-tag">A Sustainable Product Design Assistant</span>
+        <div class="status-dot"></div>
+    </div>
 </header>
 
 <div class="container">
@@ -16,26 +23,64 @@
     <div class="left-panel">
 
         <div class="spotlight">
-            <h2>🌿 Material of the Moment</h2>
-            <div id="spotlight-content">
-                Bamboo – Fast growing, renewable.
-            </div>
+            <div class="section-label">Material of the Moment</div>
+            <div class="spotlight-name" id="spotlight-name">Bamboo</div>
+            <div class="spotlight-sub" id="spotlight-sub">Fast growing, renewable, low carbon footprint.</div>
         </div>
 
-        <div class="materials-grid">
+        <div class="materials-grid" id="materials-grid">
+            <div class="material-card active" data-material="bamboo">Bamboo</div>
             <div class="material-card" data-material="plastic">Plastic</div>
-            <div class="material-card" data-material="bamboo">Bamboo</div>
             <div class="material-card" data-material="steel">Steel</div>
-            <div class="material-card" data-material="aluminum">Recycled Aluminum</div>
+            <div class="material-card" data-material="aluminum">Aluminum</div>
         </div>
 
-        <div id="impact-display"></div>
+        <div id="impact-display" class="impact-card">
+            <div class="impact-name" id="impact-name">BAMBOO</div>
+
+            <div class="impact-row">
+                <span class="impact-key">Carbon Impact</span>
+                <div class="carbon-track">
+                    <div class="carbon-fill" id="carbon-fill"></div>
+                </div>
+                <span class="impact-val" id="carbon-label">Low</span>
+            </div>
+
+            <div class="impact-row">
+                <span class="impact-key">Recyclable</span>
+                <span class="impact-val" id="detail-recyclable">Yes</span>
+            </div>
+
+            <div class="impact-row">
+                <span class="impact-key">Cost</span>
+                <span class="impact-val" id="detail-cost">Low</span>
+            </div>
+
+            <div class="impact-row">
+                <span class="impact-key">Durability</span>
+                <span class="impact-val" id="detail-durability">Medium</span>
+            </div>
+
+            <button class="design-btn" id="design-with-btn">
+                Design with this material →
+            </button>
+        </div>
+
+        <div class="compare-section">
+            <div class="section-label">Compare Materials</div>
+            <div class="compare-grid" id="compare-grid"></div>
+        </div>
 
     </div>
 
-    <!-- RIGHT SIDE -->
+    <!-- RIGHT SIDE — chatbot in iframe -->
     <div class="right-panel">
-        <iframe src="/chatbot" class="chat-frame"></iframe>
+        <iframe
+            id="chat-frame"
+            src="/chatbot"
+            class="chat-frame"
+            frameborder="0">
+        </iframe>
     </div>
 
 </div>

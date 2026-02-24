@@ -1,5 +1,6 @@
 import os
 import json
+import re
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INTENTS_PATH = os.path.join(BASE_DIR, "intents.json")
@@ -7,78 +8,71 @@ INTENTS_PATH = os.path.join(BASE_DIR, "intents.json")
 with open(INTENTS_PATH, "r", encoding="utf-8") as file:
     intents = json.load(file)
 
+# Pre-sort materials longest-first so "bamboo_laminate" matches before "bamboo"
+_sorted_materials = sorted(intents["materials"], key=lambda m: len(m), reverse=True)
+
 
 def extract_data(user_text, expected_slot=None):
-    text = user_text.lower()
+    text = user_text.lower().strip()
 
     result = {
-        "product": None,
-        "material": None,
-        "budget": None,
+        "product":      None,
+        "material":     None,
+        "budget":       None,
         "eco_priority": None,
-        "durability": None
+        "durability":   None
     }
 
-    # -----------------------------
-    # Product Detection
-    # -----------------------------
+    # ── Product ──────────────────────────────────────────────
     if expected_slot in [None, "product"]:
         for p in intents["products"]:
-            normalized_product = p.replace(" ", "")
-            normalized_text = text.replace(" ", "")
-            if p in text or normalized_product in normalized_text:
+            # whole-word match to avoid "shirt" matching "t-shirt" wrong
+            if re.search(r'\b' + re.escape(p) + r'\b', text):
                 result["product"] = p
                 break
 
-    # -----------------------------
-    # Material Detection
-    # -----------------------------
+    # ── Material ─────────────────────────────────────────────
+    # Longest-first prevents "hemp" stealing "hempcrete"
     if expected_slot in [None, "material"]:
-        for m in intents["materials"]:
+        for m in _sorted_materials:
             readable = m.replace("_", " ")
-            if readable in text:
+            # Full phrase match first (e.g. "bamboo laminate")
+            if re.search(r'\b' + re.escape(readable) + r'\b', text):
                 result["material"] = m
                 break
 
-            base_words = readable.split()
-            if any(word in text.split() for word in base_words):
-                result["material"] = m
-                break
-
-    # -----------------------------
-    # Budget Detection
-    # -----------------------------
+    # ── Budget ───────────────────────────────────────────────
     if expected_slot in [None, "budget"]:
         for level, words in intents["budget"].items():
             for w in words:
-                if w in text:
+                if re.search(r'\b' + re.escape(w) + r'\b', text):
                     result["budget"] = level
                     break
             if result["budget"]:
                 break
 
-    # -----------------------------
-    # Eco Priority Detection
-    # -----------------------------
+    # ── Eco priority ─────────────────────────────────────────
     if expected_slot in [None, "eco_priority"]:
         eco_words_safe = [e for e in intents["eco_words"] if e != "organic"]
 
         for eco in eco_words_safe:
-            if eco in text:
+            if re.search(r'\b' + re.escape(eco) + r'\b', text):
                 result["eco_priority"] = eco
                 break
 
         if result["eco_priority"] is None and "organic" in text:
             material_phrases = [m.replace("_", " ") for m in intents["materials"]]
-            if not any("organic" in phrase and phrase in text for phrase in material_phrases):
+            is_material_context = any(
+                "organic" in phrase and re.search(r'\b' + re.escape(phrase) + r'\b', text)
+                for phrase in material_phrases
+            )
+            if not is_material_context:
                 result["eco_priority"] = "organic"
 
-    # -----------------------------
-    # Durability Detection
-    # -----------------------------
+    # ── Durability ───────────────────────────────────────────
     if expected_slot in [None, "durability"]:
-        for level in ["low", "medium", "high"]:
-            if level in text:
+        for level in ["high", "medium", "low"]:
+            if re.search(r'\b' + level + r'\b', text):
                 result["durability"] = level
                 break
 

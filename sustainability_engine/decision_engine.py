@@ -13,18 +13,14 @@ def interpret_carbon(score):
 def interpret_durability(value):
     if isinstance(value, str):
         value = value.lower()
-
-        if value == "high":
-            return "Highly durable"
-        elif value == "medium":
-            return "Moderately durable"
-        else:
-            return "Low durability"
-
+        if value == "high":   return "Highly durable"
+        elif value == "medium": return "Moderately durable"
+        else:                   return "Low durability"
     return "Unknown durability"
 
 
-def generate_decision(product=None, budget=None, eco_priority=False, durability_req=None, preferred_material=None):
+def generate_decision(product=None, budget=None, eco_priority=False,
+                      durability_req=None, preferred_material=None):
 
     materials = filter_materials(
         product=product,
@@ -43,11 +39,12 @@ def generate_decision(product=None, budget=None, eco_priority=False, durability_
         }
 
     top_material = materials[0]
-    top_3 = materials[:3]
+    top_3        = materials[:3]
 
-    carbon_meaning = interpret_carbon(top_material.get("carbon_score", 0))
+    carbon_meaning    = interpret_carbon(top_material.get("carbon_score", 0))
     durability_meaning = interpret_durability(top_material.get("durability", ""))
 
+    # ── Build explanation ────────────────────────────────────
     explanation = (
         f"For designing a {product}, the most suitable material is "
         f"{top_material.get('material')}.\n\n"
@@ -63,9 +60,25 @@ def generate_decision(product=None, budget=None, eco_priority=False, durability_
         f"based on your selected preferences."
     )
 
+    # ── Add eco warning if user forced a non-eco material ────
+    eco_warning = None
+    if top_material.get("user_forced"):
+        mat_name    = top_material.get("material", "").replace("_", " ")
+        carbon      = top_material.get("carbon_score", "?")
+        eco_score   = top_material.get("eco_score", "?")
+        recyclable  = top_material.get("recyclable", "?")
+        eco_warning = (
+            f"⚠️ Heads up: {mat_name} doesn't match your eco/budget filters, "
+            f"but we've included it since you specifically requested it.\n\n"
+            f"Eco profile for {mat_name}: Carbon Score {carbon} ({interpret_carbon(carbon if isinstance(carbon, (int,float)) else 0)}), "
+            f"Eco Score {eco_score}, Recyclable: {recyclable}.\n\n"
+            f"Consider one of the greener alternatives below if sustainability is a priority."
+        )
+
     return {
-        "product": product,  # FIX #4: was missing from success response
+        "product":              product,
         "recommended_material": top_material,
-        "top_3_options": top_3,
-        "decision_explanation": explanation.strip()
+        "top_3_options":        top_3,
+        "decision_explanation": explanation.strip(),
+        "eco_warning":          eco_warning   # None if no issue, string if forced
     }

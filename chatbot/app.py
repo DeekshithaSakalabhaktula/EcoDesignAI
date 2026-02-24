@@ -2,299 +2,287 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session
 from chatbot.nlp_utils import extract_data
 from sustainability_engine.decision_engine import generate_decision
 from image.generator import generate_image
 
-
-
-# ---------------------------------
-# Conversation State (Memory)
-# ---------------------------------
-
-conversation_state = {
-    "product": None,
-    "material": None,
-    "budget": None,
-    "eco_priority": None,
-    "durability": None,
-    "awaiting": None,
-    "material_options": None
-}
-
-
-# ---------------------------------
-# Helper Functions
-# ---------------------------------
-
-def update_conversation_state(parsed_data):
-    for key in conversation_state:
-        if parsed_data.get(key):
-            conversation_state[key] = parsed_data.get(key)
-
-
-def check_missing_slots():
-    missing = []
-
-    if conversation_state["product"] is None:
-        missing.append("product")
-
-    if conversation_state["budget"] is None:
-        missing.append("budget")
-
-    if conversation_state["eco_priority"] is None:
-        missing.append("eco_priority")
-
-    return missing
-
-
-def reset_conversation():
-    for key in conversation_state:
-        conversation_state[key] = None
-
-
-MATERIAL_DATA = {
-    "plastic": {
-        "carbon": 8,
-        "recyclable": "Partial",
-        "cost": "Low",
-        "durability": "High"
-    },
-    "bamboo": {
-        "carbon": 2,
-        "recyclable": "Yes",
-        "cost": "Low",
-        "durability": "Medium"
-    },
-    "steel": {
-        "carbon": 6,
-        "recyclable": "Yes",
-        "cost": "Medium",
-        "durability": "High"
-    },
-    "aluminum": {
-        "carbon": 3,
-        "recyclable": "Yes",
-        "cost": "Medium",
-        "durability": "High"
-    }
-}
-
-
-
-# ---------------------------------
-# Flask App
-# ---------------------------------
-
 app = Flask(__name__)
+# Required for session — set a real secret in production via env var
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "ecodesignai-dev-secret")
+
+
+# ─────────────────────────────────────────────────────────────
+# Material reference (for /api/material endpoint)
+# ─────────────────────────────────────────────────────────────
+MATERIAL_DATA = {
+    "plastic":  {"carbon": 8, "recyclable": "Partial", "cost": "Low",    "durability": "High"},
+    "bamboo":   {"carbon": 2, "recyclable": "Yes",     "cost": "Low",    "durability": "Medium"},
+    "steel":    {"carbon": 6, "recyclable": "Yes",     "cost": "Medium", "durability": "High"},
+    "aluminum": {"carbon": 3, "recyclable": "Yes",     "cost": "Medium", "durability": "High"}
+}
+
+
+# ─────────────────────────────────────────────────────────────
+# Session state helpers
+# Each browser tab gets its own session — no more shared global state
+# ─────────────────────────────────────────────────────────────
+BLANK = {
+    "product":          None,
+    "material":         None,
+    "budget":           None,
+    "eco_priority":     None,
+    "durability":       None,
+    "awaiting":         None,   # which slot we're currently asking for
+    "material_options": None    # list of top-3 when in material_selection step
+}
+
+def get_state():
+    if "conv" not in session:
+        session["conv"] = dict(BLANK)
+    return session["conv"]
+
+def save_state(s):
+    session["conv"] = s
+    session.modified = True
+
+def reset_state():
+    session["conv"] = dict(BLANK)
+    session.modified = True
+
+def update_state(s, parsed):
+    """Merge extracted slots — only overwrite if a real value was found."""
+    for key in BLANK:
+        val = parsed.get(key)
+        if val is not None and val != "":
+            s[key] = val
+
+def missing_slots(s):
+    gaps = []
+    if not s["product"]:      gaps.append("product")
+    if not s["budget"]:       gaps.append("budget")
+    if not s["eco_priority"]: gaps.append("eco_priority")
+    return gaps
+
+def safe_dss(s, mat_row):
+    """Build dss_output dict — never passes None to generate_image."""
+    return {
+        "product":       (s["product"]       or "product").lower(),
+        "material":      (mat_row.get("material")      or "unknown"),
+        "material_type": (mat_row.get("material_type") or "rigid"),
+        "budget":        (s["budget"]        or "medium"),
+        "eco_priority":  (s["eco_priority"]  or False),
+        "durability":    (mat_row.get("durability")    or "medium")
+    }
+
+
+# ─────────────────────────────────────────────────────────────
+# Routes
+# ─────────────────────────────────────────────────────────────
+
+@app.route("/debug/image")
+def debug_image():
+    """Visit /debug/image to see what images have been generated."""
+    static_dir = os.path.join(os.path.dirname(__file__), "chatbot", "static", "generated_images")
+    files = []
+    if os.path.exists(static_dir):
+        for root, dirs, filenames in os.walk(static_dir):
+            for fn in filenames:
+                rel = os.path.relpath(os.path.join(root, fn), 
+                      os.path.join(os.path.dirname(__file__), "chatbot", "static"))
+                files.append("/" + rel.replace("\\", "/"))
+    return jsonify({"generated_images": files, "static_dir": static_dir})
 
 
 @app.route("/")
 def home():
-    return jsonify({"message": "EcoDesignAI API is running successfully!"})
+    return jsonify({"message": "EcoDesignAI API is running!"})
 
 
 @app.route("/design", methods=["POST"])
 def design_product():
     try:
-        data = request.get_json()
+        body = request.get_json()
+        if not body or "text" not in body:
+            return jsonify({"error": "Please provide 'text' field"}), 400
 
-        if not data or "text" not in data:
-            return jsonify({
-                "error": "Please provide product description in 'text' field"
-            }), 400
+        user_input = body["text"].strip()
+        s          = get_state()
+        user_lower = user_input.lower()
 
-        user_input = data["text"]
+        print(f"\n[INPUT] {user_input!r}")
+        print(f"[STATE] awaiting={s['awaiting']} product={s['product']} "
+              f"budget={s['budget']} eco={s['eco_priority']} material={s['material']}")
 
-        # STEP 1 — NLP Extraction
-        parsed_data = extract_data(
-            user_input,
-            expected_slot=conversation_state.get("awaiting")
-        )
+        # ── STEP 1: Extract NLP data ─────────────────────────
+        parsed = extract_data(user_input, expected_slot=s.get("awaiting"))
+        print(f"[NLP]   {parsed}")
 
-        print("Parsed Data:", parsed_data)
+        # ── STEP 2: Handle 'skip' for eco_priority ───────────
+        if s.get("awaiting") == "eco_priority" and \
+                any(w in user_lower for w in ["skip", "any", "no preference"]):
+            parsed["eco_priority"] = "recyclable"
 
-        # STEP 2 — Update Memory
-        update_conversation_state(parsed_data)
+        # ── STEP 3: Merge into state ──────────────────────────
+        update_state(s, parsed)
+        save_state(s)
 
-        # ---------------------------------
-        # STEP 3 — If waiting for material selection
-        # ---------------------------------
-        if conversation_state.get("awaiting") == "material_selection":
+        # ════════════════════════════════════════════════════
+        # STATE MACHINE
+        # ════════════════════════════════════════════════════
 
-            user_text_lower = user_input.lower()
-            selected_material = None
-            for option in conversation_state.get("material_options", []):
-                if option["material"].lower() in user_text_lower:
-                    selected_material = option["material"]
+        # ── BRANCH A: User is picking a material ─────────────
+        if s["awaiting"] == "material_selection":
+            options  = s.get("material_options") or []
+            selected = None
+
+            # 1. Exact match against option names
+            for opt in options:
+                opt_name = opt["material"].lower().replace("_", " ")
+                if opt_name in user_lower:
+                    selected = opt["material"]
                     break
 
-            # CASE 1 — User selects material explicitly
-            if selected_material:
-                conversation_state["material"] = selected_material
-                conversation_state["awaiting"] = None
+            # 2. First-word fuzzy match
+            if not selected:
+                for opt in options:
+                    first = opt["material"].lower().replace("_", " ").split()[0]
+                    if first in user_lower.split():
+                        selected = opt["material"]
+                        break
 
-            # CASE 2 — User asks for best recommendation
-            elif any(word in user_text_lower for word in [
-                "best", "recommend", "suggest", "you choose", "your choice"
-            ]):
-                best_option = conversation_state["material_options"][0]
-                conversation_state["material"] = best_option["material"]
-                conversation_state["awaiting"] = None
+            # 3. "best / recommend / first" → pick top option
+            if not selected and any(w in user_lower for w in
+                    ["best", "recommend", "suggest", "you choose", "first", "top"]):
+                selected = options[0]["material"]
 
-            # CASE 3 — Invalid reply
-            else:
+            # 4. Couldn't understand — re-ask
+            if not selected:
                 return jsonify({
-                    "clarification": "Please select one of the suggested materials or say 'recommend best'.",
-                    "options": conversation_state.get("material_options"),
-                    "current_state": conversation_state
+                    "clarification": "Please choose one of the materials below, or say 'recommend best'.",
+                    "options": options
                 })
 
-            # ---------------------------------
-            # Generate Decision First (Explain)
-            # ---------------------------------
-            decision = generate_decision(
-                product=conversation_state["product"],
-                budget=conversation_state["budget"],
-                eco_priority=conversation_state["eco_priority"],
-                durability_req=conversation_state["durability"],
-                preferred_material=conversation_state["material"]
-            )
+            s["material"] = selected
+            s["awaiting"] = None
+            save_state(s)
+            return _finalize(s)
 
-            recommended_material = decision.get("recommended_material")
+        # ── BRANCH B: Collect missing slots one at a time ─────
+        gaps = missing_slots(s)
 
-            # ---------------------------------
-            # Generate Image AFTER explanation
-            # ---------------------------------
-            image_url = None
-            if recommended_material:
-                dss_output = {
-                    "product": decision.get("product"),
-                    "material": recommended_material.get("material"),
-                    "budget": conversation_state["budget"],
-                    "eco_priority": conversation_state["eco_priority"],
-                    "durability": recommended_material.get("durability")
-                }
-
-                image_url = generate_image(dss_output)
-
-            response = {
-                "message": f"For your {decision.get('product')}, I recommend {recommended_material.get('material')} as the best eco-friendly option.",
-                "decision_explanation": decision.get("decision_explanation"),
-                "recommended_material": recommended_material,
-                "image_url": image_url
-            }
-
-            reset_conversation()
-            return jsonify(response)
-
-        # ---------------------------------
-        # STEP 4 — Check missing required slots
-        # ---------------------------------
-        missing_fields = check_missing_slots()
-
-        if missing_fields:
-
-            if "product" in missing_fields:
-                conversation_state["awaiting"] = "product"
-                return jsonify({
-                    "clarification": "What product would you like to design? (Bottle, Chair, Table, Shirt etc.)",
-                    "current_state": conversation_state
-                })
-
-            if "budget" in missing_fields:
-                conversation_state["awaiting"] = "budget"
-                return jsonify({
-                    "clarification": "What is your budget range? (Low, Medium, High)",
-                    "current_state": conversation_state
-                })
-
-            if "eco_priority" in missing_fields:
-                conversation_state["awaiting"] = "eco_priority"
-                return jsonify({
-                    "clarification": "What is your eco priority? (Low Carbon, Biodegradable, Recyclable)",
-                    "current_state": conversation_state
-                })
-
-        # ---------------------------------
-        # STEP 5 — Generate decision
-        # ---------------------------------
-        decision = generate_decision(
-            product=conversation_state["product"],
-            budget=conversation_state["budget"],
-            eco_priority=conversation_state["eco_priority"],
-            durability_req=conversation_state["durability"],
-            preferred_material=conversation_state["material"]
-        )
-
-        top_3 = decision.get("top_3_options")
-
-        # If no material selected → ask user to choose
-        if conversation_state["material"] is None and top_3:
-
-            conversation_state["awaiting"] = "material_selection"
-            conversation_state["material_options"] = top_3
-
+        if "product" in gaps:
+            s["awaiting"] = "product"
+            save_state(s)
             return jsonify({
-                "clarification": "Here are the top eco-friendly material options. Please choose one or say 'recommend best':",
-                "options": top_3,
-                "current_state": conversation_state
+                "clarification": "What product would you like to design? (Bottle, Chair, Table, Shirt, etc.)"
             })
 
-        # Otherwise generate image immediately
-        recommended_material = decision.get("recommended_material")
+        if "budget" in gaps:
+            s["awaiting"] = "budget"
+            save_state(s)
+            return jsonify({
+                "clarification": "What is your budget? (Low / Medium / High)"
+            })
 
-        image_url = None
-        if recommended_material:
-            dss_output = {
-                "product": conversation_state["product"],
-                "material": recommended_material.get("material"),
-                "budget": conversation_state["budget"],
-                "eco_priority": conversation_state["eco_priority"],
-                "durability": recommended_material.get("durability")
-            }
+        if "eco_priority" in gaps:
+            s["awaiting"] = "eco_priority"
+            save_state(s)
+            return jsonify({
+                "clarification": "What is your eco priority? (Low Carbon / Biodegradable / Recyclable) — or say 'skip'."
+            })
 
-            image_url = generate_image(dss_output)
+        # ── BRANCH C: All slots filled — present material options
+        hint = s.get("material")   # may be pre-set from studio button
 
-        response = {
-            "final_recommendation": {
-                "product": decision.get("product"),
-                "recommended_material": recommended_material,
-                "top_3_options": decision.get("top_3_options"),
-                "decision_explanation": decision.get("decision_explanation")
-            },
-            "image_url": image_url
-        }
+        decision = generate_decision(
+            product=s["product"],
+            budget=s["budget"],
+            eco_priority=s["eco_priority"],
+            durability_req=s["durability"],
+            preferred_material=hint
+        )
 
-        reset_conversation()
-        return jsonify(response)
+        top_3 = decision.get("top_3_options", [])
+
+        if not top_3:
+            reset_state()
+            return jsonify({
+                "clarification": "No materials found matching those filters. Try a different budget or eco priority."
+            })
+
+        s["material"]         = None      # clear — user must confirm
+        s["awaiting"]         = "material_selection"
+        s["material_options"] = top_3
+        save_state(s)
+
+        hint_note = (f" <strong>{hint.replace('_',' ')}</strong> is highlighted based on your choice."
+                     if hint else "")
+
+        return jsonify({
+            "clarification": (
+                f"Here are the top materials for your <strong>{s['product']}</strong>."
+                f"{hint_note} Choose one or say 'recommend best':"
+            ),
+            "options": top_3
+        })
 
     except Exception as e:
+        import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
+
+def _finalize(s):
+    """Generate final recommendation + image, then reset session."""
+
+    decision = generate_decision(
+        product=s["product"],
+        budget=s["budget"],
+        eco_priority=s["eco_priority"],
+        durability_req=s["durability"],
+        preferred_material=s["material"]
+    )
+
+    mat          = decision.get("recommended_material")
+    product_name = s["product"] or "product"
+
+    image_url = None
+    if mat:
+        try:
+            image_url = generate_image(safe_dss(s, mat))
+        except Exception as e:
+            print(f"[IMAGE ERROR] {e}")
+
+    reset_state()
+
+    return jsonify({
+        "final_recommendation": {
+            "product":              product_name,
+            "recommended_material": mat,
+            "top_3_options":        decision.get("top_3_options"),
+            "decision_explanation": decision.get("decision_explanation")
+        },
+        "eco_warning": decision.get("eco_warning"),
+        "image_url":   image_url
+    })
+
+
+# ─────────────────────────────────────────────────────────────
+# Other routes
+# ─────────────────────────────────────────────────────────────
 
 @app.route("/studio")
 def studio():
     return render_template("studio.html")
 
+@app.route("/chatbot")
+def chatbot():
+    return render_template("chatbot.html")
+
 @app.route("/api/material/<name>")
 def get_material(name):
     return jsonify(MATERIAL_DATA.get(name, {}))
 
-@app.route("/api/send_to_chatbot", methods=["POST"])
-def send_to_chatbot():
-    data = request.json
-    message = data["message"]
-
-    # You can connect this to your existing chatbot logic
-    print("Sending to chatbot:", message)
-
-    return jsonify({"status": "sent"})
-
-@app.route("/chatbot")
-def chatbot():
-    return render_template("chatbot.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
