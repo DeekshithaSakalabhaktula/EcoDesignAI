@@ -283,6 +283,5 @@ def chatbot():
 def get_material(name):
     return jsonify(MATERIAL_DATA.get(name, {}))
 
-
 if __name__ == "__main__":
     app.run(debug=True)

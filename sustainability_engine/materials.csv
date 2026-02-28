@@ -9,15 +9,15 @@ wood,20,yes,medium,high,yes,structural
 glass,25,yes,medium,high,no,rigid
 aluminum,35,yes,medium,high,no,rigid
 steel,30,yes,medium,high,no,structural
-cork,12,yes,medium,medium,yes,textile
+cork_board,12,yes,medium,medium,yes,structural
 ceramic,28,no,medium,high,no,rigid
 rubber,26,yes,medium,medium,yes,textile
-titanium,40,yes,high,very_high,no,structural
-carbon_fiber,45,no,high,very_high,no,structural
+titanium,40,yes,high,high,no,structural
+carbon_fiber,45,no,high,high,no,structural
 bioplastic,25,yes,high,medium,yes,rigid
 rice_husk_board,12,yes,low,medium,yes,structural
 fly_ash_cement,18,yes,medium,high,no,structural
-ferrocement,25,yes,medium,very_high,no,structural
+ferrocement,25,yes,medium,high,no,structural
 compressed_straw_panel,10,yes,low,medium,yes,structural
 rammed_earth,8,no,low,high,yes,structural
 hempcrete,9,yes,medium,medium,yes,structural
@@ -37,3 +37,4 @@ leather,60,no,high,high,no,textile
 paper,15,yes,low,low,yes,rigid
 recycled_glass,20,yes,medium,high,no,rigid
 recycled_steel,22,yes,medium,high,no,structural
+cork_fabric,14,yes,medium,medium,yes,textile
