@@ -2,6 +2,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from user_history import init_db
 from flask import Flask, request, jsonify, render_template, session
 from chatbot.nlp_utils import extract_data
 from sustainability_engine.decision_engine import generate_decision
@@ -11,15 +12,64 @@ app = Flask(__name__)
 # Required for session — set a real secret in production via env var
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "ecodesignai-dev-secret")
 
-
+init_db()
 # ─────────────────────────────────────────────────────────────
 # Material reference (for /api/material endpoint)
 # ─────────────────────────────────────────────────────────────
 MATERIAL_DATA = {
-    "plastic":  {"carbon": 8, "recyclable": "Partial", "cost": "Low",    "durability": "High"},
-    "bamboo":   {"carbon": 2, "recyclable": "Yes",     "cost": "Low",    "durability": "Medium"},
-    "steel":    {"carbon": 6, "recyclable": "Yes",     "cost": "Medium", "durability": "High"},
-    "aluminum": {"carbon": 3, "recyclable": "Yes",     "cost": "Medium", "durability": "High"}
+    "plastic": {
+        "carbon": 8,
+        "recyclable": "Partial",
+        "cost": "Low",
+        "durability": "High",
+        "lifecycle": "High",
+        "eco_score": 3
+    },
+
+    "bamboo": {
+        "carbon": 2,
+        "recyclable": "Yes",
+        "cost": "Low",
+        "durability": "Medium",
+        "lifecycle": "Low",
+        "eco_score": 9
+    },
+
+    "steel": {
+        "carbon": 6,
+        "recyclable": "Yes",
+        "cost": "Medium",
+        "durability": "High",
+        "lifecycle": "Medium",
+        "eco_score": 7
+    },
+
+    "aluminum": {
+        "carbon": 3,
+        "recyclable": "Yes",
+        "cost": "Medium",
+        "durability": "High",
+        "lifecycle": "Medium",
+        "eco_score": 8
+    },
+
+    "mycelium": {
+        "carbon": 1,
+        "recyclable": "Yes",
+        "cost": "Medium",
+        "durability": "Medium",
+        "lifecycle": "Low",
+        "eco_score": 10
+    },
+
+    "bioplastic": {
+        "carbon": 4,
+        "recyclable": "Yes",
+        "cost": "Medium",
+        "durability": "Medium",
+        "lifecycle": "Low",
+        "eco_score": 8
+    }
 }
 
 
@@ -284,4 +334,4 @@ def get_material(name):
     return jsonify(MATERIAL_DATA.get(name, {}))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.", port=5000)
